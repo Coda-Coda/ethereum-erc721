@@ -47,7 +47,7 @@ contract NFToken is
    /**
    * @dev Mapping from owner address to count of their tokens.
    */
-  mapping (address => uint256) private ownerToNFTokenCount;
+  mapping (address => int256) private ownerToNFTokenCountHere;
 
   /**
    * @dev Mapping from owner address to mapping of operator addresses.
@@ -62,7 +62,7 @@ contract NFToken is
     uint256 _tokenId
   )
   {
-    address tokenOwner = idToOwner[_tokenId];
+    address tokenOwner = OwnerOf(_tokenId);
     require(
       tokenOwner == msg.sender || ownerToOperators[tokenOwner][msg.sender],
       NOT_OWNER_OR_OPERATOR
@@ -78,7 +78,7 @@ contract NFToken is
     uint256 _tokenId
   )
   {
-    address tokenOwner = idToOwner[_tokenId];
+    address tokenOwner = OwnerOf(_tokenId);
     require(
       tokenOwner == msg.sender
       || idToApproval[_tokenId] == msg.sender
@@ -96,7 +96,7 @@ contract NFToken is
     uint256 _tokenId
   )
   {
-    require(idToOwner[_tokenId] != address(0), NOT_VALID_NFT);
+    require(OwnerOf(_tokenId) != address(0), NOT_VALID_NFT);
     _;
   }
 
@@ -174,7 +174,7 @@ contract NFToken is
     canTransfer(_tokenId)
     validNFToken(_tokenId)
   {
-    address tokenOwner = idToOwner[_tokenId];
+    address tokenOwner = OwnerOf(_tokenId);
     require(tokenOwner == _from, NOT_OWNER);
     require(_to != address(0), ZERO_ADDRESS);
 
@@ -197,7 +197,7 @@ contract NFToken is
     canOperate(_tokenId)
     validNFToken(_tokenId)
   {
-    address tokenOwner = idToOwner[_tokenId];
+    address tokenOwner = OwnerOf(_tokenId);
     require(_approved != tokenOwner, IS_OWNER);
 
     idToApproval[_tokenId] = _approved;
@@ -306,7 +306,7 @@ contract NFToken is
   )
     internal
   {
-    address from = idToOwner[_tokenId];
+    address from = OwnerOf(_tokenId);
     _clearApproval(_tokenId);
 
     _removeNFToken(from, _tokenId);
@@ -331,7 +331,7 @@ contract NFToken is
     virtual
   {
     require(_to != address(0), ZERO_ADDRESS);
-    require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
+    require(OwnerOf(_tokenId) == address(0), NFT_ALREADY_EXISTS);
 
     _addNFToken(_to, _tokenId);
 
@@ -353,7 +353,7 @@ contract NFToken is
     virtual
     validNFToken(_tokenId)
   {
-    address tokenOwner = idToOwner[_tokenId];
+    address tokenOwner = OwnerOf(_tokenId);
     _clearApproval(_tokenId);
     _removeNFToken(tokenOwner, _tokenId);
     emit Transfer(tokenOwner, address(0), _tokenId);
@@ -372,9 +372,9 @@ contract NFToken is
     internal
     virtual
   {
-    require(idToOwner[_tokenId] == _from, NOT_OWNER);
-    ownerToNFTokenCount[_from] -= 1;
-    delete idToOwner[_tokenId];
+    require(OwnerOf(_tokenId) == _from, NOT_OWNER);
+    ownerToNFTokenCountHere[_from] -= 1;
+    delete OwnerOf(_tokenId);
   }
 
   /**
@@ -390,10 +390,10 @@ contract NFToken is
     internal
     virtual
   {
-    require(idToOwner[_tokenId] == address(0), NFT_ALREADY_EXISTS);
+    require(OwnerOf(_tokenId) == address(0), NFT_ALREADY_EXISTS);
 
-    idToOwner[_tokenId] = _to;
-    ownerToNFTokenCount[_to] += 1;
+    OwnerOf(_tokenId) = _to;
+    ownerToNFTokenCountHere[_to] += 1;
   }
 
   /**
@@ -410,7 +410,7 @@ contract NFToken is
     view
     returns (uint256)
   {
-    return ownerToNFTokenCount[_owner];
+    return 0;
   }
 
   /**
@@ -430,7 +430,7 @@ contract NFToken is
     canTransfer(_tokenId)
     validNFToken(_tokenId)
   {
-    address tokenOwner = idToOwner[_tokenId];
+    address tokenOwner = OwnerOf(_tokenId);
     require(tokenOwner == _from, NOT_OWNER);
     require(_to != address(0), ZERO_ADDRESS);
 
